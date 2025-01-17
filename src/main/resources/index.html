@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dynamic-slim</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f7f7f7;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .table-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+
+        td {
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        caption {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            width: 90%;
+            padding: 5px;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .refresh-btn-container {
+            align-self: flex-end;
+            margin-bottom: 10px;
+            margin-right: 10%;
+            margin-top: 20px; 
+        }
+
+        .refresh-btn-container button {
+            background-color: #28a745;
+        }
+
+        .refresh-btn-container button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>dynamic-slim</h1>
+    <div class="table-container">
+        <table id="statusTable">
+            <caption>线程池实时信息</caption>
+            <thead>
+                <tr>
+                    <th>poolName</th>
+                    <th>corePoolSize</th>
+                    <th>maximumPoolSize</th>
+                    <th>activeCount</th>
+                    <th>阻塞队列类型</th>
+                    <th>活跃度</th>
+                    <th>actions</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+
+
+        <div class="refresh-btn-container">
+            <button onclick="refreshThreadPoolStatus()">刷新信息</button>
+        </div>
+    </div>
+
+    <script>
+        // 创建 WebSocket 连接
+        var socket = new WebSocket("ws://localhost:8080/poolStatus");
+
+        // 连接建立时触发
+        socket.onopen = function (event) {
+            console.log("WebSocket connected.");
+        };
+
+        // 收到消息时更新页面
+        socket.onmessage = function (event) {
+            console.log("收到后端消息：" + event.data);
+
+            // 解析 JSON 数据
+            var threadPoolStatusList = JSON.parse(event.data);
+
+            // 获取表格主体
+            var tableBody = document.querySelector("#statusTable tbody");
+
+            // 清空旧数据
+            tableBody.innerHTML = "";
+
+            // 动态生成表格行
+            threadPoolStatusList.forEach(function (status) {
+                var row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td><input type="text" value="${status.poolName}" disabled></td>
+                    <td><input type="number" value="${status.corePoolSize}"></td>
+                    <td><input type="number" value="${status.maximumPoolSize}"></td>
+                    <td><input type="number" value="${status.activeCount}" disabled></td>
+                    <td><input type="text" value="${status.queueType}" disabled></td>
+                    <td><input type="number" value="${status.activity}" disabled></td>
+                    <td><button onclick="saveChanges(this, '${status.poolName}')">保存</button></td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        };
+
+        // 连接关闭时触发
+        socket.onclose = function (event) {
+            console.log("WebSocket closed.");
+        };
+
+        // 错误处理
+        socket.onerror = function (event) {
+            console.error("WebSocket error: ", event);
+        };
+
+        // 刷新按钮点击事件
+        function refreshThreadPoolStatus() {
+            socket.send(JSON.stringify({
+                type: "nowPoolStatus"
+            }));
+            console.log("Request to refresh thread pool status sent.");
+        }
+
+        // 保存按钮点击事件
+        function saveChanges(button, threadPoolName) {
+            // 找到对应行
+            var row = button.parentElement.parentElement;
+
+            // 获取行中的输入值
+            var corePoolSize = row.cells[1].querySelector("input").value;
+            var maximumPoolSize = row.cells[2].querySelector("input").value;
+
+            // 创建要发送的数据对象
+            var updatedStatus = {
+                poolName: threadPoolName,
+                corePoolSize: parseInt(corePoolSize),
+                maximumPoolSize: parseInt(maximumPoolSize)
+            };
+
+            // 通过 WebSocket 发送更新数据到后端
+            socket.send(JSON.stringify({
+                type: "updatePoolStatus",
+                status: updatedStatus
+            }));
+
+            console.log("Sent updated status:", updatedStatus);
+        }
+    </script>
+</body>
+
+</html>
