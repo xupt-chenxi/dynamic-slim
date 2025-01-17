@@ -8,7 +8,7 @@
 - 前端与动态线程池组件之间维护一条 WebSocket 连接，动态线程池组件基于 Spring Task 定时向前端传输线程池参数供前端展示，而当开发人员通过前端界面对线程池参数信息进行修改后，前端需要将修改后的参数信息传递到动态线程池组件。
 - 基于 SpringBoot 的自动装配，当其他项目引入动态线程池组件后，组件即可生效，无需特别配置。
 
-<img src="https://pic1.imgdb.cn/item/678a7ee4d0e0a243d4f54dad.png">
+![](https://pic1.imgdb.cn/item/678a7ee4d0e0a243d4f54dad.png)
 
 ## 使用方式
 
@@ -40,7 +40,7 @@ private DynamicThreadPool userThreadPool;
 
 3. 通过前端（resources/index.html）可实时查看动态线程池的参数信息，也可直接对核心线程数与最大线程数进行修改：
 
-<img src="https://pic1.imgdb.cn/item/678a801dd0e0a243d4f54e16.png">
+![](https://pic1.imgdb.cn/item/678a801dd0e0a243d4f54e16.png)
 
 
 
